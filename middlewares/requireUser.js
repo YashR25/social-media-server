@@ -8,12 +8,18 @@ const requireUser = (req, res, next) => {
         return res.send(error(401, 'authorization header is required'))
     }
 
+
     const accessToken = req.headers.authorization.split(" ")[1]
     
     try {
         const decoded = jwt.verify(accessToken, process.env.ACCESS_TOKEN_PRIVATE_KEY)
-        req._id = decoded._id
-        next()
+        if(decoded){
+            req._id = decoded._id
+            next()
+        }else{
+            return res.send(error(401, 'Invalid access key'))
+        }
+        
     } catch (e) {
         console.log(e)
         // res.status(400).send('Invalid access key')

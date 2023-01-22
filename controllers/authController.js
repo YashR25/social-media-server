@@ -7,9 +7,9 @@ const { error, success } = require("../utils/responseWrapper")
 const signupController = async (req, res) => {
     try {
         
-        const {email, password} = req.body
+        const {name, email, password} = req.body
 
-        if(!email || !password){
+        if(!email || !password || !name){
             // res.status(400).send('All fields are required')
             return res.send(error(400,'All fields are required'))
         }
@@ -23,18 +23,16 @@ const signupController = async (req, res) => {
         const hashedPassword = await bcrypt.hash(password,10)
 
         const user = await User.create({
+            name,
             email,
             password: hashedPassword,
         })
 
-        // res.status(201).json({
-        //     user
-        // });
 
-        return res.send(success(201, {user}))
+        return res.send(success(201, 'User successfully created.'))
 
-    } catch (error) {
-        console.log(error);
+    } catch (e) {
+        return res.send(error(500, e.message))
     }
 }
 
@@ -47,7 +45,7 @@ const loginController = async (req, res) => {
             return res.send(error(400,'All fields are required'))
         }
 
-        const user = await User.findOne({ email })
+        const user = await User.findOne({ email }).select('+password')
         if(!user){
             // res.status(404).send('User not registered')
             return res.send(error(404,'User not registered'))
@@ -77,8 +75,8 @@ const loginController = async (req, res) => {
         // })
 
         return res.send(success(200, {accessToken}))
-    } catch (error) {
-        
+    } catch (e) {
+        return res.send(error(500, e.message))
     }
 }
 
@@ -104,6 +102,19 @@ const refreshAccessTokenController = async (req, res) => {
         console.log(error)
         // return res.status(401).send("Invalid refresh key") 
         return res.send(error(401,"Invalid refresh key"))  
+    }
+}
+
+const logoutController = async (req, res) => {
+    try {
+        res.clearCookie('jwt', {
+            httpOnly: true,
+            secure: true
+        })
+
+        return res.send(success(201, 'logged out'))
+    } catch (e) {
+        return res.send(error(500), e.message)
     }
 }
 
@@ -134,4 +145,4 @@ const generateRefreshToken = (data) => {
 
 }
 
-module.exports = {loginController, signupController, refreshAccessTokenController}
+module.exports = {loginController, signupController, refreshAccessTokenController, logoutController}
